@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#7e22ce" />
+    <meta
+      name="description"
+      content="Customer IQ - Intelligent Customer Churn Detection for Financial Institutions"
+    />
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+            },
+            colors: {
+              // Custom Customer IQ Brand Colors
+              brand: {
+                50: '#faf5ff',
+                100: '#f3e8ff',
+                200: '#e9d5ff',
+                300: '#d8b4fe',
+                400: '#c084fc',
+                500: '#a855f7', // Logo Highlight
+                600: '#9333ea', // Primary Buttons
+                700: '#7e22ce', // Logo Base
+                800: '#6b21a8',
+                900: '#581c87',
+              },
+              bank: {
+                dark: '#111827', // Dark gray for main text
+                light: '#6b7280', // Light gray for subtitles
+                bg: '#f8f9fa'     // Dashboard background
+              }
+            },
+            animation: {
+              'float-slow': 'float-slow 8s ease-in-out infinite',
+              'float-fast': 'float-fast 6s ease-in-out infinite alternate',
+              'logo-pulse': 'logo-pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            },
+            keyframes: {
+              'float-slow': {
+                '0%, 100%': { transform: 'translateY(0) translateX(0)' },
+                '50%': { transform: 'translateY(20px) translateX(20px)' },
+              },
+              'float-fast': {
+                '0%, 100%': { transform: 'translateY(0) translateX(0)' },
+                '50%': { transform: 'translateY(-30px) translateX(-15px)' },
+              },
+              'logo-pulse': {
+                '0%, 100%': { opacity: '1' },
+                '50%': { opacity: '0.8' },
+              }
+            }
+          }
+        }
+      }
+    </script>
+
+    <title>Customer IQ | Retention Dashboard</title>
+  </head>
+  <body class="bg-bank-bg text-bank-dark antialiased">
+    <noscript>You need to enable JavaScript to run this application.</noscript>
+    
+    <div id="root"></div>
+
+  </body>
+</html>

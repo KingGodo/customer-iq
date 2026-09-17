@@ -1,0 +1,308 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum BankStatus {
+  ACTIVE
+  SUSPENDED
+  INACTIVE
+}
+
+enum BankUserRole {
+  ADMIN
+  MANAGER
+}
+
+enum CommChannel {
+  EMAIL
+  SMS
+}
+
+enum CommCampaignStatus {
+  DRAFT
+  SENDING
+  SENT
+  FAILED
+}
+
+enum CommMessageStatus {
+  QUEUED
+  SENT
+  FAILED
+  SKIPPED
+}
+
+model Bank {
+  id              Int               @id @default(autoincrement())
+  bank_name       String
+  nationality     String?
+  license_number  String?
+  branch_code     String?
+  api_access_key  String            @unique
+  status          BankStatus        @default(ACTIVE)
+  created_at      DateTime          @default(now())
+  updated_at      DateTime          @updatedAt
+
+  users               BankUser[]
+  customers           CustomerProfile[]
+  ai_performance_logs AiPerformanceLog[]
+  campaigns           CommunicationCampaign[]
+
+  @@map("banks")
+}
+
+model BankUser {
+  id            Int          @id @default(autoincrement())
+  bank_id       Int
+  first_name    String
+  last_name     String
+  email         String       @unique
+  password_hash String
+  role          BankUserRole @default(MANAGER)
+  created_at    DateTime     @default(now())
+  updated_at    DateTime     @updatedAt
+
+  bank Bank @relation(fields: [bank_id], references: [id], onDelete: Cascade)
+
+  @@index([bank_id])
+  @@map("bank_users")
+}
+
+model RefCardType {
+  id         Int      @id @default(autoincrement())
+  card_name  String
+  annual_fee Decimal  @default(0) @db.Decimal(10, 2)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  customers CustomerProfile[]
+
+  @@map("ref_card_types")
+}
+
+model RefBankProduct {
+  id           Int      @id @default(autoincrement())
+  product_name String
+  category     String
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  enrollments CustomerProductEnrollment[]
+
+  @@map("ref_bank_products")
+}
+
+model CustomerProfile {
+  id               Int      @id @default(autoincrement())
+  bank_id          Int
+  customer_uid     String
+  first_name       String
+  last_name        String
+  email            String?
+  phone            String?
+  gender           String?
+  age              Int?
+  geography        String?
+  credit_score     Int?
+  tenure_years     Int      @default(0)
+  is_active_member Int      @default(1)
+  has_cr_card      Int      @default(0)
+  card_type_id     Int?
+  joined_date      DateTime @default(now()) @db.Date
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  bank          Bank                         @relation(fields: [bank_id], references: [id], onDelete: Cascade)
+  card_type     RefCardType?                 @relation(fields: [card_type_id], references: [id], onDelete: SetNull)
+  loyalty       CustomerLoyalty?
+  transactions  CustomerTransaction[]
+  enrollments   CustomerProductEnrollment[]
+  assessments   ChurnAssessment[]
+  messages      CommunicationMessage[]
+
+  @@unique([bank_id, customer_uid])
+  @@index([bank_id])
+  @@index([is_active_member])
+  @@map("customer_profiles")
+}
+
+model CustomerTransaction {
+  id               Int      @id @default(autoincrement())
+  customer_id      Int
+  amount           Decimal  @db.Decimal(14, 2)
+  transaction_type String
+  category         String?
+  description      String?
+  transaction_date DateTime @default(now())
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  customer CustomerProfile @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+
+  @@index([customer_id])
+  @@index([category, transaction_type])
+  @@map("customer_transactions")
+}
+
+model CustomerProductEnrollment {
+  id            Int      @id @default(autoincrement())
+  customer_id   Int
+  product_id    Int
+  enrolled_date DateTime @default(now()) @db.Date
+  status        String   @default("ACTIVE")
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  customer CustomerProfile @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  product  RefBankProduct  @relation(fields: [product_id], references: [id], onDelete: Cascade)
+
+  @@index([customer_id, status])
+  @@map("customer_product_enrollments")
+}
+
+model CustomerLoyalty {
+  id                 Int      @id @default(autoincrement())
+  customer_id        Int      @unique
+  points_earned      Int      @default(0)
+  satisfaction_score Int      @default(3)
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
+
+  customer CustomerProfile @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+
+  @@map("customer_loyalty")
+}
+
+model RetentionPlan {
+  id               Int      @id @default(autoincrement())
+  name             String
+  bank_investment  String   @default("$0.00")
+  actionable_steps Json     @default("[]")
+  email_template   String?
+  sms_template     String?
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  allocation_rules AllocationRule[]
+  assessments      ChurnAssessment[]
+  campaigns        CommunicationCampaign[]
+
+  @@map("retention_plans")
+}
+
+model CommunicationCampaign {
+  id              Int                 @id @default(autoincrement())
+  bank_id         Int
+  plan_id         Int?
+  name            String
+  channel         CommChannel
+  subject         String?
+  body            String
+  status          CommCampaignStatus  @default(DRAFT)
+  target_min_risk Float               @default(0.4)
+  sent_count      Int                 @default(0)
+  failed_count    Int                 @default(0)
+  created_by      Int?
+  sent_at         DateTime?
+  created_at      DateTime            @default(now())
+  updated_at      DateTime            @updatedAt
+
+  bank     Bank                   @relation(fields: [bank_id], references: [id], onDelete: Cascade)
+  plan     RetentionPlan?         @relation(fields: [plan_id], references: [id], onDelete: SetNull)
+  messages CommunicationMessage[]
+
+  @@index([bank_id, created_at])
+  @@map("communication_campaigns")
+}
+
+model CommunicationMessage {
+  id            Int                @id @default(autoincrement())
+  campaign_id   Int
+  customer_id   Int
+  channel       CommChannel
+  recipient     String
+  subject       String?
+  body          String
+  status        CommMessageStatus  @default(QUEUED)
+  error_message String?
+  sent_at       DateTime?
+  created_at    DateTime           @default(now())
+  updated_at    DateTime           @updatedAt
+
+  campaign CommunicationCampaign @relation(fields: [campaign_id], references: [id], onDelete: Cascade)
+  customer CustomerProfile       @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+
+  @@index([campaign_id])
+  @@index([customer_id])
+  @@map("communication_messages")
+}
+
+model AllocationRule {
+  id              Int      @id @default(autoincrement())
+  plan_id         Int
+  min_risk_score  Decimal  @db.Decimal(5, 4)
+  max_risk_score  Decimal  @db.Decimal(5, 4)
+  min_value_score Int
+  max_value_score Int
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  plan RetentionPlan @relation(fields: [plan_id], references: [id], onDelete: Cascade)
+
+  @@index([plan_id])
+  @@map("allocation_rules")
+}
+
+model ValueScoringRule {
+  id                           Int      @id @default(autoincrement())
+  balance_normalization_factor Decimal  @default(100000) @db.Decimal(14, 2)
+  balance_max_points           Int      @default(40)
+  salary_normalization_factor  Decimal  @default(100000) @db.Decimal(14, 2)
+  salary_max_points            Int      @default(30)
+  active_member_bonus          Int      @default(15)
+  diamond_card_bonus           Int      @default(15)
+  created_at                   DateTime @default(now())
+  updated_at                   DateTime @updatedAt
+
+  @@map("value_scoring_rules")
+}
+
+model ChurnAssessment {
+  id              Int      @id @default(autoincrement())
+  customer_id     Int
+  ai_risk_score   Float
+  value_score     Int
+  advised_plan_id Int?
+  assessment_date DateTime @default(now())
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  customer     CustomerProfile @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  advised_plan RetentionPlan?  @relation(fields: [advised_plan_id], references: [id], onDelete: SetNull)
+
+  @@index([customer_id])
+  @@index([assessment_date])
+  @@map("churn_assessments")
+}
+
+model AiPerformanceLog {
+  id                      Int      @id @default(autoincrement())
+  bank_id                 Int
+  total_customers_scanned Int
+  high_risk_detected      Int
+  avg_confidence_score    Float
+  execution_time_ms       Int
+  run_timestamp           DateTime @default(now())
+  created_at              DateTime @default(now())
+  updated_at              DateTime @updatedAt
+
+  bank Bank @relation(fields: [bank_id], references: [id], onDelete: Cascade)
+
+  @@index([bank_id, run_timestamp])
+  @@map("ai_performance_logs")
+}
