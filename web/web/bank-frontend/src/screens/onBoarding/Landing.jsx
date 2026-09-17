@@ -155,7 +155,7 @@ const Landing = () => {
         className="relative"
         style={{
           background:
-            'linear-gradient(180deg, #050505 0%, #0a0c0b 12%, #121816 28%, #2a3d34 42%, #6b8f7a 52%, #c8d5cc 60%, #eef0ef 68%, #f7f7f7 74%, #ffffff 80%)',
+            'linear-gradient(180deg, #050505 0%, #0a0c0b 18%, #0f1412 38%, #1a2420 55%, #2a3d34 65%, #6b8f7a 74%, #c8d5cc 82%, #eef0ef 90%, #ffffff 100%)',
         }}
       >
         <div
@@ -275,7 +275,7 @@ const Landing = () => {
                 <br />
                 for a Smarter Future
               </h1>
-              <p className="mt-5 max-w-[22rem] text-[14px] font-medium leading-relaxed text-white/50">
+              <p className="mt-5 max-w-[26rem] text-[15px] font-medium leading-relaxed text-white/90 [text-shadow:0_1px_2px_rgba(0,0,0,0.55)]">
                 Track expenses, optimize budgets, grow your wealth, and unlock AI-driven financial
                 insights — all in one secure digital banking experience.
               </p>
